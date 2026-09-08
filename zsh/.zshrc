@@ -1,5 +1,3 @@
-# Add user configurations here
-# For HyDE to not touch your beloved configurations,
 # we added a config file for you to customize HyDE before loading zshrc
 # Edit $ZDOTDIR/.user.zsh to customize HyDE before loading zshrc
 
@@ -99,6 +97,30 @@ rf() {
 	}
 	rm -rf -- build
 }
+
+venv() {
+	source "$HOME/zep/.venv/bin/activate"
+}
+
+tas() {
+    local bin="/opt/Tools/DAS/8.3.0/bin/tas_server"
+
+    # Check if already running
+    if pgrep -f "$bin" >/dev/null 2>&1; then
+        echo "tas_server is already running (PID: $(pgrep -f "$bin" | tr '\n' ' '))"
+        return 0
+    fi
+
+    # Start it fully detached so it survives the parent shell closing
+    setsid nohup "$bin" >/tmp/tas_server.log 2>&1 < /dev/null &
+    disown
+
+    local pid=$!
+    echo "tas_server started with PID: $pid"
+}
+
+alias tricore-gdb="/opt/Tools/tricore-gdb/bin/tricore-elf-gdb"
+alias tricore-openocd="/opt/Tools/tricore-openocd/bin/openocd"
 
 alias wb='zbuild'
 alias wf='zflash'
