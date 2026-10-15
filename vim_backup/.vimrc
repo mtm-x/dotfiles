@@ -16,8 +16,8 @@ set smartcase
 set hidden
 set splitright
 set splitbelow
-set undofile
-set undodir=~/.vim/undo//
+"set undofile
+"set undodir=~/.vim/undo//
 set wildmenu
 set completeopt=menuone,noinsert,noselect
 
@@ -33,6 +33,9 @@ Plug 'preservim/nerdtree'          " File tree sidebar (:NERDTree)
 Plug 'ctrlpvim/ctrlp.vim'          " Fuzzy file finder (Ctrl+P)
 Plug 'easymotion/vim-easymotion'   " Jump anywhere fast (<leader><leader>w)
 
+Plug 'junegunn/fzf.vim'            " Fuzzy finder using system fzf
+Plug 'tpope/vim-fugitive'        " Git integration (:Git, :Gdiffsplit, :Git blame)
+Plug 'editorconfig/editorconfig-vim'
 call plug#end()
 
 " --- Theme Configuration ---
@@ -104,18 +107,33 @@ set tags=./tags;,tags;
 " tags;     -> also search upward from vim's cwd
 " the trailing ';' means "keep going up until found or hit root"
 
-" ---- cscope ----
 if has('cscope')
   set csprg=/usr/bin/cscope
   set csto=1        " prefer ctags over cscope for tag-name matches, cscope as fallback
   set cst            " use cscope for :tag / ctrl-]
   set nocsverb
 
-  if filereadable("cscope.out")
-    cs add cscope.out
-  elseif $CSCOPE_DB != ""
-    cs add $CSCOPE_DB
-  endif
+  function! LoadCscope()
+    " Don't re-add if a database is already loaded
+    if !empty(cscope_connection())
+      return
+    endif
+
+    " Search upward from the current buffer's directory for cscope.out
+    let db = findfile("cscope.out", expand('%:p:h') . ';')
+    if empty(db) && $CSCOPE_DB != ""
+      let db = $CSCOPE_DB
+    endif
+
+    if !empty(db) && filereadable(db)
+      execute "cs add " . fnameescape(db) . " " . fnameescape(fnamemodify(db, ":p:h"))
+    endif
+  endfunction
+
+  augroup CscopeAutoLoad
+    autocmd!
+    autocmd VimEnter,BufEnter * call LoadCscope()
+  augroup END
 
   set csverb
 endif
@@ -126,8 +144,44 @@ nnoremap <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
 nnoremap <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
 nnoremap <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
 nnoremap <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
-nnoremap <C-\>f :cs find f <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
 nnoremap <C-\>i :cs find i <C-R>=expand("<cword>")<CR><CR>
 nnoremap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
-let g:ctrlp_map = '<leader>f'
+" ---- vertical-split versions (ctrl-\ + v + letter) ----
+nnoremap <C-\>vs :vert scs find s <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>vg :vert scs find g <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>vc :vert scs find c <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>vt :vert scs find t <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>ve :vert scs find e <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>vf :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
+nnoremap <C-\>vi :vert scs find i <C-R>=expand("<cword>")<CR><CR>
+nnoremap <C-\>vd :vert scs find d <C-R>=expand("<cword>")<CR><CR>
+
+" ---- ctags: normal / horizontal / vertical / preview ----
+nnoremap <C-]>      <C-]>
+nnoremap <leader>ts :stag <C-R>=expand("<cword>")<CR><CR>
+nnoremap <leader>tv :vert stag <C-R>=expand("<cword>")<CR><CR>
+nnoremap <leader>tp :ptag <C-R>=expand("<cword>")<CR><CR>
+
+" --- fzf ---
+nnoremap <leader>f  :Files<CR>    
+nnoremap <leader>F  :GFiles<CR>   
+nnoremap <leader>g  :Rg<CR>       
+nnoremap <leader>bb :Buffers<CR>  
+nnoremap <leader>tt :Tags<CR>     
+nnoremap <leader>tb :BTags<CR>    
+nnoremap <leader>l  :Lines<CR>    
+nnoremap <leader>H  :History<CR>
+
+" --- vim-fugitive: Git workflow (all mappings use <leader>v) ---
+nnoremap <leader>vs :Git<CR>                                      " Git status / summary
+nnoremap <leader>va :Git add %<CR>                                " Stage current file
+nnoremap <leader>vA :Git add -A<CR>                               " Stage all changes
+nnoremap <leader>vc :Git commit<CR>                               " Commit staged changes
+nnoremap <leader>vp :Git push<CR>                                 " Push to remote
+nnoremap <leader>vP :Git pull<CR>                                 " Pull from remote
+nnoremap <leader>vf :Git fetch<CR>                                " Fetch from remote
+nnoremap <leader>vd :Gdiffsplit<CR>                               " Diff file against index
+nnoremap <leader>vb :Git blame<CR>                                " Blame current file
+nnoremap <leader>vl :Git log --oneline --decorate --all<CR>        " View Git history
