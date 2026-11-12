@@ -184,4 +184,15 @@ nnoremap <leader>vP :Git pull<CR>                                 " Pull from re
 nnoremap <leader>vf :Git fetch<CR>                                " Fetch from remote
 nnoremap <leader>vd :Gdiffsplit<CR>                               " Diff file against index
 nnoremap <leader>vb :Git blame<CR>                                " Blame current file
-nnoremap <leader>vl :Git log --oneline --decorate --all<CR>        " View Git history
+nnoremap <leader>vl :Git log --oneline --decorate --all<CR>       " View Git history
+nnoremap <leader>vL :Git log --oneline --decorate -- %<CR>	  " Log of current file
+
+" Visual: <leader>y yanks to Vim AND the system clipboard
+xnoremap <leader>y y:call system('wl-copy', @")<CR>
+
+" Normal: <leader>y + motion (e.g. <leader>yy for a line)
+nnoremap <expr> <leader>y 'y'
+nnoremap <leader>yy yy:call system('wl-copy', @")<CR>
+
+" Paste from system clipboard
+nnoremap <leader>p :let @" = system('wl-paste --no-newline')<CR>""p
